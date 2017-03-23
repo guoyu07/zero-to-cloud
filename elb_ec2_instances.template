@@ -1,0 +1,91 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "A ELB instance and 2 EC2 instances",
+  "Resources": {
+    "MyFirstNodeEC2Instance": {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+          "ImageId" : "ami-80086dec",
+          "InstanceType": "t2.micro",
+          "KeyName" : "MyEC2KeyParForCloudGuruAndAWSSolutionsArchitect",
+          "Tags" : [{
+              "Key" : "Name",
+              "Value" : "MyEC2FirstInstance"
+          }],
+          "SecurityGroupIds": [ "sg-b78de0d3" ],
+          "SubnetId": "subnet-2cc2f875",
+          "IamInstanceProfile": "ec2-dynamo-rds",
+          "UserData" : {
+            "Fn::Base64" : {
+                "Fn::Join" : [ 
+                  "", 
+                  [
+                      "#!/bin/bash\n",
+                      "yum update -y\n",
+                      "sudo yum install java-1.8.0 -y\n",
+                      "sudo yum remove java-1.7.0-openjdk -y\n",
+                      "aws configure set s3.signature_version s3v4\n",
+                      "aws s3 cp s3://codedeploy4ohio/target/target/zero-to-cloud-balance-springboot-0.0.1-SNAPSHOT.jar .\n",
+                      "chmod 700 zero-to-cloud-balance-springboot-0.0.1-SNAPSHOT.jar\n",
+                      "java -jar zero-to-cloud-balance-springboot-0.0.1-SNAPSHOT.jar\n"
+                  ]
+                ]
+             }
+        } ,
+       }
+    },
+    "MySecondNodeEC2Instance": {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+          "ImageId" : "ami-80086dec",
+          "InstanceType": "t2.micro",
+          "KeyName" : "MyEC2KeyParForCloudGuruAndAWSSolutionsArchitect",
+          "Tags" : [{
+              "Key" : "Name",
+              "Value" : "MyEC2SecondInstance"
+          }],
+          "SecurityGroupIds": [ "sg-b78de0d3" ],
+          "SubnetId": "subnet-17561f73",
+          "IamInstanceProfile": "ec2-dynamo-rds",
+          "UserData" : {
+            "Fn::Base64" : {
+                "Fn::Join" : [ 
+                  "", 
+                  [
+                      "#!/bin/bash\n",
+                      "yum update -y\n",
+                      "sudo yum install java-1.8.0 -y\n",
+                      "sudo yum remove java-1.7.0-openjdk -y\n",
+                      "aws configure set s3.signature_version s3v4\n",
+                      "aws s3 cp s3://codedeploy4ohio/target/target/zero-to-cloud-balance-springboot-0.0.1-SNAPSHOT.jar .\n",
+                      "chmod 700 zero-to-cloud-balance-springboot-0.0.1-SNAPSHOT.jar\n",
+                      "java -jar zero-to-cloud-balance-springboot-0.0.1-SNAPSHOT.jar\n"
+                  ]
+                ]
+             }
+        } ,
+       }
+    },
+    "MyAutoCreatedLoadBalancer" : {
+        "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+        "Properties" : {
+            "AvailabilityZones" : [ "sa-east-1c", "sa-east-1a" ],
+            "Instances" : [
+                { "Ref" : "MyFirstNodeEC2Instance" }, { "Ref" : "MySecondNodeEC2Instance" }
+            ],
+            "Listeners" : [ {
+                "LoadBalancerPort" : "80",
+                "InstancePort" : "8080",
+                "Protocol" : "HTTP"
+            }],
+            "HealthCheck" : {
+                "Target" : "HTTP:80/",
+                "HealthyThreshold" : "2",
+                "UnhealthyThreshold" : "3",
+                "Interval" : "10",
+                "Timeout" : "9"
+            }
+        }
+    }
+  }
+}
